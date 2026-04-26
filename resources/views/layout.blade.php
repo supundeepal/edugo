@@ -372,7 +372,7 @@
                         }, 800);
                     });
             } else {
-                console.error("Laravel Echo is not loaded!");
+                console.error("Echo is not loaded!");
             }
         }, 1000);
     });
