@@ -1,0 +1,16 @@
+{
+  "name": "EduGo Gate Scanner",
+  "short_name": "EduGo",
+  "start_url": "/mobile",
+  "display": "standalone",
+  "background_color": "#151521",
+  "theme_color": "#3699ff",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
