@@ -16,7 +16,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Log; 
 use Illuminate\Support\Facades\Auth; 
 use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\Cache; // ⭐ අලුතින් දැම්මා (ෆෝන් එකට සිග්නල් යවන්න)
+use Illuminate\Support\Facades\Cache; 
 
 class StudentController extends Controller
 {
@@ -288,8 +288,7 @@ class StudentController extends Controller
 
    public function getStudentInfo(Request $request) {
         
-        // ⭐ මෙන්න ලැප් එකේ බ්‍රවුසරේට සිග්නල් එක යවන අලුත් කෑල්ල!
-        event(new \App\Events\StudentScanned($request->card_number));
+        // 💥 මෙතන තිබුණු event(new \App\Events\StudentScanned...) කෑල්ල අයින් කළා! (Loop එක හැදුවේ ඒකයි)
 
         $student = Student::with('courses')
                           ->where('card_number', $request->card_number)
@@ -324,7 +323,6 @@ class StudentController extends Controller
 
     public function punchPayAttend(Request $request) {
         try {
-            // ⭐ ළමයාගේ විස්තර උඩින්ම ගන්නවා (card_number එක ඕනේ නිසා)
             $student = Student::find($request->student_id);
 
             $alreadyAttended = Attendance::where('student_id', $request->student_id)
@@ -333,7 +331,6 @@ class StudentController extends Controller
                                          ->exists();
 
             if ($alreadyAttended && $request->amount == 0) {
-                // ⭐ දැනටමත් ඇවිත් හිටියත්, ෆෝන් එකට සිග්නල් එක යවනවා කැමරාව ඔටෝ මාරු වෙන්න
                 if ($student) {
                     Cache::put('scan_status_' . $student->card_number, 'completed', now()->addMinutes(5));
                 }
@@ -376,7 +373,6 @@ class StudentController extends Controller
                 $sms_status = $this->sendSMS($phone, $msg);
             }
 
-            // ⭐ අන්න ලැප් එකෙන් වැඩේ 100% ක් ඉවර කරා! ෆෝන් එකට සිග්නල් එක යවනවා
             if ($student) {
                 Cache::put('scan_status_' . $student->card_number, 'completed', now()->addMinutes(5));
             }
@@ -396,9 +392,6 @@ class StudentController extends Controller
     // 9. Gate Scanner Logic
     // ==========================================
    public function gateScan(Request $request) {
-
-        // ⭐ මෙතනටත් සිග්නල් එක යවන කෑල්ල දැම්මා (ෆෝන් එකෙන් මේකට ආවොත් වැඩ කරන්න)
-        event(new \App\Events\StudentScanned($request->card_number));
 
         $student = Student::with('courses')
                           ->where('card_number', $request->card_number)

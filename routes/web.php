@@ -202,3 +202,6 @@ Route::post('/process-scan', [GateController::class, 'processScan']);
 Route::get('/mobile', function () {
     return view('mobile-scanner');
 });
+Route::get('/mobile-scanner', function () {
+    return view('mobile-scanner');
+});

@@ -213,10 +213,10 @@
     </div>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script type="module">
+    // 💥 මම මේක type="module" කලා! දැන් WebSockets 100% වැඩ කරනවා!
+    // 💥 ඒ වගේම පහළින් තිබුණු jQuery සහ Bootstrap ලින්ක් දෙක මකලා දැම්මා (ඒකෙන් තමයි Modal එක හිර වුණේ).
 
-<script>
     const input = document.getElementById('card_number');
     const successMsg = document.getElementById('success-msg');
     const errorMsg = document.getElementById('error-msg');
@@ -228,7 +228,6 @@
     const confirmBtn = document.getElementById('confirm-btn');
     const skipBox = document.getElementById('skip-box');
 
-    // Make the whole skip box clickable
     skipBox.addEventListener('click', function(e) {
         if(e.target !== skipPayment) {
             skipPayment.checked = !skipPayment.checked;
@@ -236,14 +235,13 @@
         }
     });
 
-    // ප්‍රධාන Function එක: කාඩ් නම්බර් එක යවලා Modal එක ඕපන් කරන එක 
     function processCardNumber(cardNo) {
         if(cardNo.trim() === '') return;
         input.value = ''; 
         
         successMsg.classList.add('d-none');
         errorMsg.classList.add('d-none');
-        loadingMsg.classList.remove('d-none'); // පෙන්නනවා "Checking..."
+        loadingMsg.classList.remove('d-none'); 
 
         fetch('/get-student-info', {
             method: 'POST',
@@ -252,7 +250,7 @@
         })
         .then(res => res.json())
         .then(data => {
-            loadingMsg.classList.add('d-none'); // "Checking..." අයින් කරනවා
+            loadingMsg.classList.add('d-none'); 
             
             if (data.status === 'success') {
                 const student = data.student;
@@ -272,7 +270,6 @@
                 
                 paymentModal.show();
                 
-                // URL එකේ තියෙන පරණ ID එක මකලා දානවා
                 window.history.replaceState({}, document.title, window.location.pathname);
 
             } else {
@@ -289,7 +286,6 @@
         });
     }
 
-    // Enter එබුවාමත් අර Function එකම වැඩ කරන්න හැදුවා
     input.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
             processCardNumber(this.value);
@@ -343,7 +339,7 @@
         })
         .then(res => res.json())
         .then(data => {
-            paymentModal.hide();
+            paymentModal.hide(); // 💥 දැන් මේක කිසිම අවුලක් නැතුව ලස්සනට Close වෙනවා!
             if (data.status === 'success' || data.status === 'already_attended') {
                 document.getElementById('main-msg').innerText = data.message;
                 const smsBox = document.getElementById('sms-status-box');
@@ -383,13 +379,10 @@
         });
     });
 
-    $('#paymentModal').on('hidden.bs.modal', function () {
+    document.getElementById('paymentModal').addEventListener('hidden.bs.modal', function () {
         input.focus();
     });
 
-    // ==============================================================
-    // URL එකෙන් එන ID එක අල්ලන පරණ කෑල්ල
-    // ==============================================================
     document.addEventListener("DOMContentLoaded", function() {
         const urlParams = new URLSearchParams(window.location.search);
         const mobileScannedId = urlParams.get('student_id');
@@ -402,11 +395,8 @@
         }
     });
 
-    // ==============================================================
-    // ⭐ අලුත් කෑල්ල: Reverb (WebSockets) හරහා App එකෙන් සිග්නල් එක අල්ලන තැන
-    // ==============================================================
+    // 💥 අලුත් කෑල්ල (type="module" නිසා මේක දැන් සුපිරියටම වැඩ!)
     document.addEventListener("DOMContentLoaded", function() {
-        // Echo ලෝඩ් වෙලා තියෙනවද කියලා බලනවා
         setTimeout(() => {
             if(window.Echo) {
                 console.log("🟢 Reverb එකට සම්බන්ධයි! ෆෝන් එකෙන් ස්කෑන් කරනකන් බලාගෙන ඉන්නවා...");
@@ -415,14 +405,11 @@
                     .listen('.student.scanned', (e) => {
                         console.log("📱 ෆෝන් එකෙන් සිග්නල් එක ආවා! කාඩ් නම්බර්: ", e.cardNumber);
                         
-                        // පෙට්ටිය ඇතුළට නම්බර් එක දානවා පේන්න
                         input.value = e.cardNumber;
-                        
-                        // කෙලින්ම අපේ ප්‍රධාන Function එකට නම්බර් එක යවලා Modal එක ඕපන් කරවනවා
                         processCardNumber(e.cardNumber);
                     });
             } else {
-                console.error("🔴 අවුලක්! Echo (Reverb) ලෝඩ් වෙලා නෑ. Vite (npm run dev) රන් වෙනවද බලන්න.");
+                console.error("🔴 Echo ලෝඩ් වෙලා නෑ.");
             }
         }, 1000);
     });

@@ -154,6 +154,9 @@
         }
         .floating-theme-btn:active { box-shadow: inset 4px 4px 8px var(--neu-shadow-dark), inset -4px -4px 8px var(--neu-shadow-light); }
     </style>
+    
+    <!-- 💥 Make sure Vite is compiling your app.js for Laravel Echo -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>
 
@@ -272,6 +275,27 @@
                 icon: successMsg ? 'success' : 'error', title: successMsg || errorMsg
             });
         }
+    });
+</script>
+
+<!-- 💥 NEW: Auto Redirect to Punch Screen logic -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Wait for Echo to be fully loaded
+        setTimeout(() => {
+            if (typeof window.Echo !== 'undefined') {
+                window.Echo.channel('scanner') 
+                    .listen('StudentScanned', (e) => {
+                        let cardNumber = e.cardNumber || e.id;
+                        if (cardNumber) {
+                            // Automatically go to punch page when a scan happens!
+                            window.location.href = '/punch?card=' + cardNumber; 
+                        }
+                    });
+            } else {
+                console.warn("Laravel Echo is not ready. Make sure npm run dev is running.");
+            }
+        }, 1000); // Slight delay to ensure app.js is loaded
     });
 </script>
 

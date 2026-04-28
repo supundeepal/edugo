@@ -635,4 +635,4 @@
     }
 </script>
 </body>
-</html>
+</html><?php /**PATH C:\Users\Supun\Desktop\EduGo_Live_Code\resources\views/mobile-scanner.blade.php ENDPATH**/ ?>

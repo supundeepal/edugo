@@ -90,14 +90,13 @@ class GateController extends Controller
 
         if($cardNumber) {
             try {
-                // 1. ළමයාව හොයනවා (Index No එකෙනුත් හොයන්න හැදුවා!)
+                // 💥 FIX: index_no කෑල්ල සම්පූර්ණයෙන්ම අයින් කළා!
                 $student = Student::where('card_number', $cardNumber)
                                   ->orWhere('id', $cardNumber)
-                                  ->orWhere('index_no', $cardNumber)
                                   ->first();
                 
                 // 2. ෆොටෝ එක හදාගන්නවා
-                $photoUrl = ($student && $student->image) ? asset('storage/' . $student->image) : null;
+                $photoUrl = ($student && $student->photo) ? '/storage/' . $student->photo : null;
 
                 // 💥 FIX: ලැප් එකට යවන්නේ නියම Card Number එක! අමු QR කේතය නෙවෙයි.
                 $broadcastNumber = $student ? $student->card_number : $cardNumber;
@@ -111,7 +110,7 @@ class GateController extends Controller
                 return response()->json([
                     'status' => 'success', 
                     'message' => 'Scan broadcasted successfully to laptop!',
-                    'student_name' => $student ? $student->name : 'Unknown Student',
+                    'student_name' => $student ? $student->student_name : 'Unknown Student',
                     'photo_url' => $photoUrl
                 ]);
             } catch (\Throwable $e) {
@@ -132,10 +131,9 @@ class GateController extends Controller
     // 3.5 ෆෝන් එකෙන් තත්පරෙන් තත්පරේ "ලැප් එකේ වැඩ ඉවරද" කියලා අහන තැන
     // ==============================================================
     public function checkMobileStatus($cardNumber) {
-        // 💥 FIX: ලැප් එක සමහරවිට Cache එක සේව් කරන්නේ නියම Card Number එකෙන් නිසා දෙකම චෙක් කරනවා
+        // 💥 FIX: මෙතනත් index_no කෑල්ල සම්පූර්ණයෙන්ම අයින් කළා!
         $student = Student::where('card_number', $cardNumber)
                           ->orWhere('id', $cardNumber)
-                          ->orWhere('index_no', $cardNumber)
                           ->first();
                           
         $actualCardNumber = $student ? $student->card_number : $cardNumber;
