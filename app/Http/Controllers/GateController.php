@@ -130,20 +130,28 @@ class GateController extends Controller
     // ==============================================================
     // 3.5 ෆෝන් එකෙන් තත්පරෙන් තත්පරේ "ලැප් එකේ වැඩ ඉවරද" කියලා අහන තැන
     // ==============================================================
-    public function checkMobileStatus($cardNumber) {
-        // 💥 FIX: මෙතනත් index_no කෑල්ල සම්පූර්ණයෙන්ම අයින් කළා!
-        $student = Student::where('card_number', $cardNumber)
-                          ->orWhere('id', $cardNumber)
-                          ->first();
-                          
-        $actualCardNumber = $student ? $student->card_number : $cardNumber;
+   public function checkMobileStatus($cardNumber) {
+        $student = \App\Models\Student::where('card_number', $cardNumber)->orWhere('id', $cardNumber)->first();
+        if (!$student) return response()->json(['status' => 'pending']);
 
-        $status1 = Cache::get('scan_status_' . $cardNumber, 'pending');
-        $status2 = Cache::get('scan_status_' . $actualCardNumber, 'pending');
+        // 💥 ULTIMATE FIX: කෙලින්ම Database එකෙන්ම බලනවා මේ දැන් (අන්තිම විනාඩි 2 ඇතුළත) Attendance එකක් හරි Payment එකක් හරි වැටිලද කියලා!
+        $recentAttendance = \App\Models\Attendance::where('student_id', $student->id)
+            ->where('created_at', '>=', now()->subMinutes(2))->exists();
+            
+        $recentPayment = \App\Models\Payment::where('student_id', $student->id)
+            ->where('created_at', '>=', now()->subMinutes(2))->exists();
 
-        $finalStatus = ($status1 === 'completed' || $status2 === 'completed') ? 'completed' : 'pending';
+        // බැකප් එකක් විදිහට පරණ Cache එකත් බලනවා
+        $cached1 = \Illuminate\Support\Facades\Cache::get('scan_status_' . $student->card_number);
+        $cached2 = \Illuminate\Support\Facades\Cache::get('scan_status_' . $student->id);
+        $cached3 = \Illuminate\Support\Facades\Cache::get('scan_status_' . $cardNumber);
 
-        return response()->json(['status' => $finalStatus]);
+        // මේවායින් එකක් හරි 'ඔව්' නම්, තත්පරෙන් ෆෝන් එක ඔටෝ අන්ලොක් වෙනවා!
+        if ($recentAttendance || $recentPayment || $cached1 === 'completed' || $cached2 === 'completed' || $cached3 === 'completed') {
+            return response()->json(['status' => 'completed']);
+        }
+
+        return response()->json(['status' => 'pending']);
     }
 
     // ==============================================================

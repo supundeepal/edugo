@@ -287,9 +287,6 @@ class StudentController extends Controller
     }
 
    public function getStudentInfo(Request $request) {
-        
-        // 💥 මෙතන තිබුණු event(new \App\Events\StudentScanned...) කෑල්ල අයින් කළා! (Loop එක හැදුවේ ඒකයි)
-
         $student = Student::with('courses')
                           ->where('card_number', $request->card_number)
                           ->where('institute_id', Auth::user()->institute_id)
@@ -330,9 +327,12 @@ class StudentController extends Controller
                                          ->whereDate('date', Carbon::today())
                                          ->exists();
 
+            // 💥 වෙනස්කම 1: හැම විදිහටම (Card Number, ID) Cache එක සේව් කළා. එතකොට කොහෙන් හෙව්වත් අහු වෙනවා!
             if ($alreadyAttended && $request->amount == 0) {
                 if ($student) {
                     Cache::put('scan_status_' . $student->card_number, 'completed', now()->addMinutes(5));
+                    Cache::put('scan_status_' . $student->id, 'completed', now()->addMinutes(5));
+                    Cache::put('scan_status_' . $request->student_id, 'completed', now()->addMinutes(5));
                 }
                 return response()->json(['status' => 'already_attended', 'message' => 'ALREADY ATTENDED TODAY!']);
             }
@@ -373,8 +373,11 @@ class StudentController extends Controller
                 $sms_status = $this->sendSMS($phone, $msg);
             }
 
+            // 💥 වෙනස්කම 2: මෙතනත් හැම විදිහටම (Card Number, ID) Cache එක සේව් කළා!
             if ($student) {
                 Cache::put('scan_status_' . $student->card_number, 'completed', now()->addMinutes(5));
+                Cache::put('scan_status_' . $student->id, 'completed', now()->addMinutes(5));
+                Cache::put('scan_status_' . $request->student_id, 'completed', now()->addMinutes(5));
             }
 
             return response()->json([
