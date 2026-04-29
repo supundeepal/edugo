@@ -8,9 +8,9 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-// 1. Mobile App එකට ලොග් වෙන තැන
+// Mobile App API Routes
 Route::post('/mobile-login', [GateController::class, 'mobileLogin']);
-
-// 2. Mobile App එකෙන් ස්කෑන් කරද්දි එන තැන
 Route::post('/mobile-scan', [GateController::class, 'mobileScan']);
-Route::get('/mobile-scan-status/{cardNumber}', [GateController::class, 'checkMobileStatus']);
+
+// 💥 මෙන්න මේකයි අඩුවෙලා තිබ්බේ! ෆෝන් එකෙන් තත්පරෙන් තත්පරේට "මාර්ක් කරාද" අහන Route එක!
+Route::get('/mobile-status/{cardNumber}', [GateController::class, 'checkMobileStatus']);

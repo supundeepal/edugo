@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
     <style>
         :root {
             --bg-color: #151521; --card-bg: #1e1e2d; --card-grad: linear-gradient(145deg, #1e1e2d, #1a1a28);
@@ -120,9 +122,10 @@
 
 <script>
     let html5QrCode;
-    let checkerInterval;
+    // 💥 setInterval එක අයින් කරා!
     const API_BASE = window.location.origin + '/api';
     let wakeLock = null;
+    let echoListenerAdded = false; // 💥 අලුත් Variable එකක්
 
     window.onload = function() {
         const savedTheme = localStorage.getItem('theme');
@@ -187,14 +190,12 @@
     }
 
     function closeScanner() {
-        if(checkerInterval) clearInterval(checkerInterval);
         if (wakeLock !== null) { wakeLock.release().then(() => { wakeLock = null; }); }
         if (html5QrCode) { html5QrCode.stop().then(() => { document.getElementById('theme-btn').classList.remove('d-none'); showMenu(); }); } 
         else { document.getElementById('theme-btn').classList.remove('d-none'); showMenu(); }
     }
 
     function cancelProcessing() {
-        if(checkerInterval) clearInterval(checkerInterval);
         document.getElementById('processing-section').classList.add('d-none');
         document.getElementById('scanner-section').classList.remove('d-none');
         if(html5QrCode) html5QrCode.resume();
@@ -227,42 +228,37 @@
         }
     }
 
-    // 💥 THE AUTO RESUME LOGIC 💥
+    // 💥 THE AUTO RESUME LOGIC (USING WEBSOCKETS / REVERB) 💥
     function startCheckingStatus(cardNumber) {
-        checkerInterval = setInterval(() => {
-            const token = localStorage.getItem('mobile_token'); // 💥 මෙන්න මේ ටෝකන් එක ගන්න කෑල්ල තියෙන්න ඕනේ!
-            
-            fetch(`${API_BASE}/mobile-status/${cardNumber}`, {
-                method: 'GET',
-                headers: { 
-                    'Authorization': `Bearer ${token}`, // 💥 සර්වර් එකට ටෝකන් එක යවනවා
-                    'Accept': 'application/json'
-                }
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'completed') {
-                    clearInterval(checkerInterval); 
-                    
-                    document.getElementById('successSound').play().catch(e => console.log(e));
-                    
-                    getSwal().fire({
-                        title: '<span style="color:#1bc5bd">Success!</span>',
-                        text: 'Ready for Next Student',
-                        icon: 'success',
-                        timer: 800,
-                        showConfirmButton: false
-                    }).then(() => {
-                        document.getElementById('processing-section').classList.add('d-none');
-                        document.getElementById('scanner-section').classList.remove('d-none');
-                        if(html5QrCode) html5QrCode.resume(); 
+        // Echo ලෝඩ් වෙලා තියෙනවා නම් විතරක් වැඩේ කරනවා
+        setTimeout(() => {
+            if(window.Echo && !echoListenerAdded) {
+                window.Echo.channel('attendance-channel')
+                    .listen('AttendanceMarked', (e) => {
+                        console.log("WebSocket Signal Received!", e);
+                        
+                        document.getElementById('successSound').play().catch(err => console.log(err));
+                        
+                        getSwal().fire({
+                            title: '<span style="color:#1bc5bd">Success!</span>',
+                            text: 'Ready for Next Student',
+                            icon: 'success',
+                            timer: 800,
+                            showConfirmButton: false
+                        }).then(() => {
+                            document.getElementById('processing-section').classList.add('d-none');
+                            document.getElementById('scanner-section').classList.remove('d-none');
+                            if(html5QrCode) html5QrCode.resume(); 
+                        });
                     });
-                }
-            })
-            .catch(err => console.log("Status Check Error: ", err)); 
-        }, 1500); 
+                
+                // ආයෙ ආයෙ Listener එකතු කරන එක නවත්තන්න මේක True කරනවා
+                echoListenerAdded = true; 
+            } else if (!window.Echo) {
+                console.log("Laravel Echo load වෙලා නෑ! WebSockets වැඩ කරන්නේ නෑ. Terminal එකේ npm run dev ගහලා තියෙන්න ඕනේ.");
+            }
+        }, 500); 
     }
-    
 
     function checkHistory() { getSwal().fire('Info', 'Watch your laptop screen to see scan results.', 'info'); }
     function logout() { localStorage.removeItem('mobile_token'); window.location.reload(); }

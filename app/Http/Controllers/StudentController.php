@@ -327,12 +327,15 @@ class StudentController extends Controller
                                          ->whereDate('date', Carbon::today())
                                          ->exists();
 
-            // 💥 වෙනස්කම 1: හැම විදිහටම (Card Number, ID) Cache එක සේව් කළා. එතකොට කොහෙන් හෙව්වත් අහු වෙනවා!
+            // 💥 වෙනස්කම 1: Cache සේව් කරනවාට අමතරව WebSockets (Reverb) Signal එකත් යවනවා!
             if ($alreadyAttended && $request->amount == 0) {
                 if ($student) {
                     Cache::put('scan_status_' . $student->card_number, 'completed', now()->addMinutes(5));
                     Cache::put('scan_status_' . $student->id, 'completed', now()->addMinutes(5));
                     Cache::put('scan_status_' . $request->student_id, 'completed', now()->addMinutes(5));
+                    
+                    // 💥 මෙන්න WebSocket Signal එක!
+                    broadcast(new \App\Events\AttendanceMarked($student->card_number));
                 }
                 return response()->json(['status' => 'already_attended', 'message' => 'ALREADY ATTENDED TODAY!']);
             }
@@ -373,11 +376,14 @@ class StudentController extends Controller
                 $sms_status = $this->sendSMS($phone, $msg);
             }
 
-            // 💥 වෙනස්කම 2: මෙතනත් හැම විදිහටම (Card Number, ID) Cache එක සේව් කළා!
+            // 💥 වෙනස්කම 2: මෙතනත් WebSockets Signal එක යවනවා!
             if ($student) {
                 Cache::put('scan_status_' . $student->card_number, 'completed', now()->addMinutes(5));
                 Cache::put('scan_status_' . $student->id, 'completed', now()->addMinutes(5));
                 Cache::put('scan_status_' . $request->student_id, 'completed', now()->addMinutes(5));
+                
+                // 💥 මෙන්න WebSocket Signal එක!
+                broadcast(new \App\Events\AttendanceMarked($student->card_number));
             }
 
             return response()->json([
