@@ -54,7 +54,8 @@
         #reader { width: 100%; border-radius: 12px; overflow: hidden; border: 2px dashed rgba(27, 197, 189, 0.5); }
         .spinner-ring { width: 70px; height: 70px; border: 4px solid rgba(54, 153, 255, 0.1); border-top: 4px solid var(--blue); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .student-pic { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 4px solid var(--blue); box-shadow: 0 5px 15px rgba(54, 153, 255, 0.3); margin-bottom: 15px; }
+        /* ✅ ෆොටෝ එක මැදට ගන්න CSS එකතු කළා */
+        .student-pic { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 4px solid var(--blue); box-shadow: 0 5px 15px rgba(54, 153, 255, 0.3); margin: 0 auto 15px auto; display: block; }
     </style>
 </head>
 <body>
@@ -103,7 +104,7 @@
     </div>
 
     <div id="processing-section" class="custom-card w-100 text-center d-none">
-        <div id="student-info-box">
+        <div id="student-info-box" class="d-flex flex-column align-items-center">
             <img id="student-img" src="" class="student-pic" alt="Student">
             <h4 class="fw-bold mb-1" id="student-name">Loading...</h4>
             <p class="small mb-4" style="color: var(--text-muted);">ID: <span id="student-id-display">--</span></p>
@@ -122,10 +123,9 @@
 
 <script>
     let html5QrCode;
-    // 💥 setInterval එක අයින් කරා!
     const API_BASE = window.location.origin + '/api';
     let wakeLock = null;
-    let echoListenerAdded = false; // 💥 අලුත් Variable එකක්
+    let echoListenerAdded = false;
 
     window.onload = function() {
         const savedTheme = localStorage.getItem('theme');
@@ -175,7 +175,7 @@
         
         requestWakeLock();
         
-        // Audio Unlock Trick (So it plays without user clicking later)
+        // Audio Unlock Trick
         let beepAudio = document.getElementById('beepSound');
         let successAudio = document.getElementById('successSound');
         beepAudio.play().then(() => { beepAudio.pause(); beepAudio.currentTime = 0; }).catch(()=>{});
@@ -228,9 +228,7 @@
         }
     }
 
-    // 💥 THE AUTO RESUME LOGIC (USING WEBSOCKETS / REVERB) 💥
     function startCheckingStatus(cardNumber) {
-        // Echo ලෝඩ් වෙලා තියෙනවා නම් විතරක් වැඩේ කරනවා
         setTimeout(() => {
             if(window.Echo && !echoListenerAdded) {
                 window.Echo.channel('attendance-channel')
@@ -252,10 +250,9 @@
                         });
                     });
                 
-                // ආයෙ ආයෙ Listener එකතු කරන එක නවත්තන්න මේක True කරනවා
                 echoListenerAdded = true; 
             } else if (!window.Echo) {
-                console.log("Laravel Echo load වෙලා නෑ! WebSockets වැඩ කරන්නේ නෑ. Terminal එකේ npm run dev ගහලා තියෙන්න ඕනේ.");
+                console.log("Laravel Echo is not loaded!");
             }
         }, 500); 
     }

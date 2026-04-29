@@ -54,7 +54,10 @@
         #reader { width: 100%; border-radius: 12px; overflow: hidden; border: 2px dashed rgba(27, 197, 189, 0.5); }
         .spinner-ring { width: 70px; height: 70px; border: 4px solid rgba(54, 153, 255, 0.1); border-top: 4px solid var(--blue); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .student-pic { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 4px solid var(--blue); box-shadow: 0 5px 15px rgba(54, 153, 255, 0.3); margin-bottom: 15px; }
+        .student-pic { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 4px solid var(--blue); box-shadow: 0 5px 15px rgba(54, 153, 255, 0.3); margin: 0 auto 15px auto; display: block; }
+        
+        /* ✅ අලුතින් දැක්ක Clock එකේ ලස්සන Design එක */
+        .clock-banner { background: var(--icon-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 15px; display: inline-flex; align-items: center; gap: 10px; box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05); }
     </style>
 </head>
 <body>
@@ -95,15 +98,25 @@
     </div>
 
     <div id="scanner-section" class="custom-card w-100 d-none">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h5 class="fw-bold mb-0" style="color: var(--green);"><i class="fa-solid fa-qrcode"></i> Scanning...</h5>
+        
+        <div class="text-center mb-4 pb-3 border-bottom" style="border-color: var(--border-color) !important;">
+            <h4 class="fw-bold mb-2" style="color: var(--blue);"><i class="fa-solid fa-building-columns me-2"></i>EduGo Smart Institute</h4>
+            <div class="clock-banner mt-2">
+                <i class="fa-regular fa-clock" style="color: var(--green); font-size: 1.2rem;"></i>
+                <span id="live-clock" class="fw-bold fs-5" style="letter-spacing: 1px;">00:00:00 AM</span>
+            </div>
+            <p class="small mt-2 mb-0" style="color: var(--text-muted);" id="live-date">--</p>
         </div>
-        <div id="reader" class="mb-4"></div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="fw-bold mb-0" style="color: var(--green);"><i class="fa-solid fa-qrcode me-2"></i> Align Student Card</h6>
+        </div>
+        <div id="reader" class="mb-4 shadow-sm"></div>
         <button onclick="closeScanner()" class="btn-3d w-100 mt-3" style="background: var(--input-bg); color: var(--text-muted); border: 1px solid var(--border-color);">Stop Scanning</button>
     </div>
 
     <div id="processing-section" class="custom-card w-100 text-center d-none">
-        <div id="student-info-box">
+        <div id="student-info-box" class="d-flex flex-column align-items-center">
             <img id="student-img" src="" class="student-pic" alt="Student">
             <h4 class="fw-bold mb-1" id="student-name">Loading...</h4>
             <p class="small mb-4" style="color: var(--text-muted);">ID: <span id="student-id-display">--</span></p>
@@ -122,10 +135,30 @@
 
 <script>
     let html5QrCode;
-    // 💥 setInterval එක අයින් කරා!
     const API_BASE = window.location.origin + '/api';
     let wakeLock = null;
-    let echoListenerAdded = false; // 💥 අලුත් Variable එකක්
+    let echoListenerAdded = false;
+
+    // ✅ Live Clock එක වැඩ කරන්න ලියපු Function එක
+    function updateDateTime() {
+        const now = new Date();
+        let hours = now.getHours();
+        let minutes = now.getMinutes();
+        let seconds = now.getSeconds();
+        let ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12; hours = hours ? hours : 12; 
+        minutes = minutes < 10 ? '0' + minutes : minutes;
+        seconds = seconds < 10 ? '0' + seconds : seconds;
+        
+        const clockEl = document.getElementById('live-clock');
+        if(clockEl) clockEl.innerText = hours + ':' + minutes + ':' + seconds + ' ' + ampm;
+
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const dateEl = document.getElementById('live-date');
+        if(dateEl) dateEl.innerText = now.toLocaleDateString('en-US', options);
+    }
+    setInterval(updateDateTime, 1000);
+    updateDateTime();
 
     window.onload = function() {
         const savedTheme = localStorage.getItem('theme');
@@ -171,11 +204,11 @@
 
     function openScanner() {
         document.getElementById('menu-section').classList.add('d-none'); document.getElementById('scanner-section').classList.remove('d-none');
-        document.getElementById('nav-logout-btn').classList.add('d-none'); document.getElementById('theme-btn').classList.add('d-none');
+        document.getElementById('nav-logout-btn').classList.add('d-none'); 
+        // ✅ අර Theme Button එක හැංගෙන කෑල්ල මම අයින් කරා! දැන් වැඩ!
         
         requestWakeLock();
         
-        // Audio Unlock Trick (So it plays without user clicking later)
         let beepAudio = document.getElementById('beepSound');
         let successAudio = document.getElementById('successSound');
         beepAudio.play().then(() => { beepAudio.pause(); beepAudio.currentTime = 0; }).catch(()=>{});
@@ -191,8 +224,8 @@
 
     function closeScanner() {
         if (wakeLock !== null) { wakeLock.release().then(() => { wakeLock = null; }); }
-        if (html5QrCode) { html5QrCode.stop().then(() => { document.getElementById('theme-btn').classList.remove('d-none'); showMenu(); }); } 
-        else { document.getElementById('theme-btn').classList.remove('d-none'); showMenu(); }
+        if (html5QrCode) { html5QrCode.stop().then(() => { showMenu(); }); } 
+        else { showMenu(); }
     }
 
     function cancelProcessing() {
@@ -228,9 +261,7 @@
         }
     }
 
-    // 💥 THE AUTO RESUME LOGIC (USING WEBSOCKETS / REVERB) 💥
     function startCheckingStatus(cardNumber) {
-        // Echo ලෝඩ් වෙලා තියෙනවා නම් විතරක් වැඩේ කරනවා
         setTimeout(() => {
             if(window.Echo && !echoListenerAdded) {
                 window.Echo.channel('attendance-channel')
@@ -252,10 +283,9 @@
                         });
                     });
                 
-                // ආයෙ ආයෙ Listener එකතු කරන එක නවත්තන්න මේක True කරනවා
                 echoListenerAdded = true; 
             } else if (!window.Echo) {
-                console.log("Laravel Echo load වෙලා නෑ! WebSockets වැඩ කරන්නේ නෑ. Terminal එකේ npm run dev ගහලා තියෙන්න ඕනේ.");
+                console.log("Laravel Echo is not loaded!");
             }
         }, 500); 
     }
